@@ -3,10 +3,10 @@ class User:
     def __init__(self, _id, name, home, office):
         self.id = _id
         self.name = name
-        self.home = home
-        self.office = office
-        self.trace = [[]]
-        self.current_loc = home
+        self.home = [home[0],home[1]]
+        self.office = [office[0],office[1]]
+        self.trace = []
+        self.current_loc = [home[0], home[1]]
         self.transport = None
 
 
@@ -28,7 +28,6 @@ class User:
 
     def dump(self):
         return {
-            "id": self.id,
             "name": self.name,
             "home": [self.home[0],self.home[1]],
             "office": [self.office[0], self.office[1]],

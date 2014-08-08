@@ -33,9 +33,10 @@ if __name__ == '__main__':
     ubs.run()
     
     udump =ubs.pg.dump()
+    print(udump)
     
-    col = pymongo.Connection('localhost', 27017)['test']['user']
-    col.insert(udump)
+#    col = pymongo.Connection('localhost', 27017)['test']['user']
+#    col.insert(udump)
 
 
 
