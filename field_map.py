@@ -7,44 +7,54 @@ from location import Location
 
 class FieldMap:
     
-    def __init__(self, width, height, unit, centers, center_extent):
+    '''
+    field_matrix
+      1: normal
+      2: center
+      4: station
+    '''
+
+    def __init__(self, width, height, unit):
+        self.width = width
+        self.height = height
         self.field_matrix = np.ones([width, height])
-        self.locations = []
-        self.map_matrix = []
-        self.stations = {}
-
-
+        self.field_vector = np.arange(width * height)
         self.unit = unit
-        for i in range(width):
-            self.locations.append([])
-            self.map_matrix.append([])
-            for j in range(height):
-                self.locations[i].append(Location(i, j))
-                self.map_matrix[i].append(0)
+        self.centers = []
+        self.stations = []
 
-        
-        ## 中心街の生成
-        for i in range(centers):
-            cx = np.random.randint(width)
-            cy = np.random.randint(height)
-            extent_width = center_extent / 2
+    def get_loc_in_center(self):
+        return self.centers[np.random.randint(len(self.centers))]
+
+    def get_loc_random(self):
+        locint = self.field_vector[np.random.randint(len(self.field_vector))]
+        row = int(locint / self.width)
+        col = locint % self.width
+        return [row, col]
+
+    def place_centers(self, number, extent):
+        for i in range(number):
+            cx = int(np.random.randint(self.width))
+            cy = int(np.random.randint(self.height))
+            extent_width = int(extent / 2)
             if extent_width == 0:
                 extent_width = 1
             
-            for j in range(center_extent):
+            for j in range(extent):
                 cxj = cx - extent_width + j
-                if cxj < 0 or cxj >= width:
+                if cxj < 0 or cxj >= self.width:
                     continue
-                for k in range(center_extent):
+                for k in range(extent):
                     cyk = cy - extent_width + k
-                    if cyk < 0 or cyk >= height:
+                    if cyk < 0 or cyk >= self.height:
                         continue
-                    
-                    self.locations[cxj][cyk].center = True
-                    self.map_matrix[cxj][cyk] = 1
 
-        self.place_stations(1000)
-                    
+                    self.field_matrix[cxj][cyk] += 2
+                    self.centers.append([cxj, cyk])
+
+    def get_field_vector(self):
+        pass
+
     def place_stations(self, number):
         map_nparry = np.array(self.map_matrix)
         nor = map_nparry.shape[0]
@@ -53,8 +63,14 @@ class FieldMap:
         weight = map_nparry.reshape(nor * noc)
         weight *= 3
         weight += 1
-        vlen = np.linalg.norm(weight)
-        weight /= vlen
+        w_sum = np.sum(weight) 
+        weight /= w_sum
+
+        if np.sum(weight) > 1:
+            weight[np.random.randint(len(weight))] -= np.sum(weight) - 1
+        elif np.sum(weight) < 1:
+            weight[np.random.randint(len(weight))] += 1 - np.sum(weight)
+        
 
         stations = np.random.choice(target, number, replace=False, p=weight)
 
@@ -65,26 +81,23 @@ class FieldMap:
             self.locations[row][col].station = True
             self.map_matrix[row][col] += 2
 
-        
 if __name__ == '__main__':
     import pandas as pd
-    fm = FieldMap(100, 100, 100, 10, 5)
+    import sys
 
-    print fm.map_matrix
-    for i in len(fm.map_matrix):
-        for j in len(fm.map_matrix[i]):
-            print fm.map_matrix[i][j]
+    fm = FieldMap(100, 100, 100)
+
+    for i in range(len(fm.field_matrix)):
+        for j in range(len(fm.field_matrix[i])):
+            sys.stdout.write("%s" % fm.field_matrix[i][j])
     
+        sys.stdout.write("\n")
 
-    '''
-    for i in range(100):
-        line = ""
-        for j in range(100):
-            if fm.locations[i][j].center == True:
-                line += str(1)
-            else:
-                line += str(0)
-        
-        print line
-     '''
-            
+    fm.place_centers(10, 10)
+    for i in range(len(fm.field_matrix)):
+        for j in range(len(fm.field_matrix[i])):
+            sys.stdout.write("%s" % fm.field_matrix[i][j])
+    
+        sys.stdout.write("\n")
+
+

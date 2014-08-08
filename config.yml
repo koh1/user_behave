@@ -1,0 +1,23 @@
+sim:
+  step_width_min: 1
+  total_sim_time_min: 1440
+
+map:
+  width: 100
+  height: 100
+  unit_meter: 1000
+  center:
+    num: 10
+    extent: 10
+
+
+user:
+  num: 1000
+  
+
+
+transport:
+  walk: 4
+  bike: 30
+  vehicle: 50
+  train: 80
