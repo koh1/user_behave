@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import sys
-
 import numpy as np
+import pymongo
+
 from location import Location
 
 class FieldMap:
@@ -14,14 +15,17 @@ class FieldMap:
       4: station
     '''
 
-    def __init__(self, width, height, unit):
+    def __init__(self, width, height, unit, logdb, prefix):
         self.width = width
         self.height = height
         self.field_matrix = np.ones([width, height])
         self.field_vector = np.arange(width * height)
         self.unit = unit
+
         self.centers = []
         self.stations = []
+        
+        self.logdb = logdb['%s_map' % prefix]
 
     def get_loc_in_center(self):
         return self.centers[np.random.randint(len(self.centers))]
@@ -31,7 +35,7 @@ class FieldMap:
         row = int(locint / self.width)
         col = locint % self.width
         return [row, col]
-
+    
     def place_centers(self, number, extent):
         for i in range(number):
             cx = int(np.random.randint(self.width))
@@ -49,8 +53,17 @@ class FieldMap:
                     if cyk < 0 or cyk >= self.height:
                         continue
 
-                    self.field_matrix[cxj][cyk] += 2
+                    self.field_matrix[cxj][cyk] += 0
                     self.centers.append([cxj, cyk])
+
+    def dump_map(self):
+        r = []
+        for i in range(self.width):
+            for j in range(self.height):
+                r.append([i, j, self.field_matrix[i][j]])
+
+        self.logdb.insert({"map": r})
+        
 
     def get_field_vector(self):
         pass
@@ -61,8 +74,8 @@ class FieldMap:
         noc = map_nparry.shape[1]
         target = np.arange(nor * noc)
         weight = map_nparry.reshape(nor * noc)
-        weight *= 3
-        weight += 1
+        weight = weight ** 3
+#        weight += 1
         w_sum = np.sum(weight) 
         weight /= w_sum
 

@@ -1,35 +1,42 @@
 class User:
     
-    def __init__(self, _id, name, home, office):
+    def __init__(self, _id, name, homex, homey, officex, officey):
         self.id = _id
         self.name = name
-        self.home = [home[0],home[1]]
-        self.office = [office[0],office[1]]
+        self.homex = homex
+        self.homey = homey
+        self.officex = officex
+        self.officey = officey
         self.trace = []
-        self.current_loc = [home[0], home[1]]
+        self.curx = homex
+        self.cury = homey
         self.transport = None
 
 
     def initialize(self):
-        self.trace = [home]
-        self.current_loc = home
+        self.trace = [[homex, homey]]
+        self.curx = homex
+        self.cury = homey
 
-    def set_home(self, home):
-        self.home = home
+    def set_home(self, homex, homey):
+        self.homex = homex
+        self.homey = homey
 
-    def set_office(self, office):
-        self.office = office
+    def set_office(self, officex, officey):
+        self.officex = officex
+        self.officey = officey
     
-    def move_to(self,location):
-        prev = [self.current_loc[0], self.current_loc[1]]
+    def move_to(self,locx, locy):
+        prev = [self.curx, self.cury]
         self.trace.append(prev)
-        self.current_loc = location
+        self.curx = locx
+        self.cury = locy
 
 
     def dump(self):
         return {
             "name": self.name,
-            "home": [self.home[0],self.home[1]],
-            "office": [self.office[0], self.office[1]],
+            "home": [self.homex, self.homey],
+            "office": [self.officex, self.officey],
             "trace": self.trace
             }

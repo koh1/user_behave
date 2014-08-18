@@ -10,11 +10,14 @@ map:
     num: 10
     extent: 10
 
-
 user:
   num: 1000
   
-
+logdb: 
+  db_host: localhost
+  db_port: 27017
+  db_name: test
+  prefix: no_center
 
 transport:
   walk: 4

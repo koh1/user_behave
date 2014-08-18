@@ -1,62 +1,97 @@
+# -*- coding: utf-8 -*-
+
 import numpy as np
+import time
 
 
 from field_map import FieldMap
 from user import User
 
-
 class PlayGround:
     
-    def __init__(self, map_config, user_config):
-        self.fm = FieldMap(map_config['width'],
-                           map_config['height'],
-                           map_config['unit_meter'])
+    def __init__(self, map_config, user_config, logdb, prefix):
 
-        self.fm.place_centers(map_config['center']['num'],
-                              map_config['center']['extent'])
+        self.fm = FieldMap(int(map_config['width']),
+                           int(map_config['height']),
+                           int(map_config['unit_meter']),
+                           logdb, prefix)
+
+        self.fm.place_centers(int(map_config['center']['num']),
+                              int(map_config['center']['extent']))
+
+        self.fm.dump_map()
 
         self.user_dists = []
         self.users = []
+        self.users_on_map = np.zeros((int(map_config['width']),
+                                     int(map_config['height'])))
         for i in range(int(user_config['num'])):
             h = self.fm.get_loc_random()
             o = self.fm.get_loc_in_center()
-            u = User(i, "user_%07d" % i, h, o)
+            u = User(i, "user_%07d" % i, h[0], h[1], o[0], o[1])
             self.users.append(u)
+            self.users_on_map[u.curx][u.cury] += 1
+        
+        self.logdb = logdb['%s_udist' % prefix]
+            
+        self.logging_buff_size = 10
+        self.logging_buff = []
 
-    def dump(self):
+    def dump_user_dist(self):
         r = []
-        for u in self.users:
-            r.append(u.dump())
+        for i in range(self.fm.width):
+            for j in range(self.fm.height):
+                r.append([i, j, self.users_on_map[i][j]])
+
         return r
 
-    def process(self):
+    def process(self, step_count):
         for u in self.users:
             self.move_user(u)
+
+        log = {"time": step_count,
+               "dist": self.dump_user_dist()}
+        self.logging(log, False)
+    
+    def flush_log(self):
+        if len(self.logging_buff) > 0:
+            self.logdb.insert(self.logging_buff)
+            self.logging_buff = []
+
+    def logging(self, data, flush):
+        self.logging_buff.append(data)
+        if len(self.logging_buff) >= self.logging_buff_size or flush:
+           self.logdb.insert(self.logging_buff) 
+           self.logging_buff = []
 
     def move_user(self, u):
         attractions = self.calc_attractions_proto(u)
         sel_arry = self.direction_select_array(attractions)
         direction = sel_arry[np.random.randint(len(sel_arry))]
-        
+        self.users_on_map[u.curx][u.cury] -= 1        
         if direction == 0: ## NORTH
-            u.move_to([u.current_loc[0], u.current_loc[1]+1])
+            self.users_on_map[u.curx][u.cury+1] += 1
+            u.move_to(u.curx, u.cury+1)
 
         elif direction == 1: ## EAST
-            u.move_to([u.current_loc[0]+1, u.current_loc[1]])
+            self.users_on_map[u.curx+1][u.cury] += 1
+            u.move_to(u.curx+1, u.cury)
 
         elif direction == 2: ## SOUTH
-            u.move_to([u.current_loc[0], u.current_loc[1]-1])
+            self.users_on_map[u.curx][u.cury-1] += 1
+            u.move_to(u.curx, u.cury-1)
 
         elif direction == 3: ## WEST
-            u.move_to([u.current_loc[0]-1, u.current_loc[1]])
+            self.users_on_map[u.curx-1][u.cury] += 1
+            u.move_to(u.curx-1, u.cury)
     
     def calc_attractions_proto(self, user):
         '''
         no user specific attraction
         [north, east, south, west]の配列を返す
         '''
-        x = user.current_loc[0]
-        y = user.current_loc[1]
+        x = user.curx
+        y = user.cury
         
         if y < self.fm.height - 1:
             yp = self.fm.field_matrix[x][y+1]
